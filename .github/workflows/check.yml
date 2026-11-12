@@ -1,0 +1,53 @@
+name: Check
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  host-cpp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Compile and test portable C++ core
+        run: python3 scripts/host_test.py --cxx g++
+
+  bridge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Test bridge logic
+        run: |
+          node tests/bridge.test.cjs
+          node tests/bridge-race.test.cjs
+
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Check JavaScript syntax
+        run: |
+          node --check web/js/app.js
+          node --check web/js/bridge.js
+          node --check web/js/settings.js
+          node --check tests/bridge.test.cjs
+          node --check tests/bridge-race.test.cjs
+          node --check tests/browser.test.cjs
+      - name: Check Python syntax
+        run: python3 -m py_compile scripts/sdk.py scripts/host_test.py
